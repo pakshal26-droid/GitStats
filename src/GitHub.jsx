@@ -263,11 +263,12 @@ const GitHub = () => {
                       : 'bg-indigo-600 hover:bg-indigo-700'
                   }`}
                 >
-                  <Search size={16} />
+                    {loading ? <Loader className="animate-spin mr-2" size={16} /> : <Search size={16} />}
+
                 </button>
                 
               </div>
-              <p className="text-sm text-gray-500 mt-10 flex items-center gap-x-1 ">Check Bottom <ArrowDown className='size-4'/></p>
+                {loading? null : <p className="text-sm text-gray-500 mt-10 flex items-center gap-x-1 ">Check Bottom <ArrowDown className='size-4'/></p> }
             </div>
           </div>
         </div>
