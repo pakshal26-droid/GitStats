@@ -1,6 +1,6 @@
 import React from 'react'
 import GitHub from './GitHub'
-import SharedStatCard from './components/SharedStatCard'
+import SharedStatCard from './SharedStatCard'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 
