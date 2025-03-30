@@ -1,6 +1,9 @@
-import React, { useRef } from 'react';
-import { GitPullRequest, GitCommit, Building2, Star, GitFork, Download } from 'lucide-react';
+import React, { useRef , useState } from 'react';
+import { GitPullRequest, GitCommit, Building2, Star, GitFork, Download , Copy  } from 'lucide-react';
+import { Share2 } from 'lucide-react';
 import * as htmlToImage from 'html-to-image';
+import {db} from "../firebase"
+import { collection, addDoc } from 'firebase/firestore';
 
 const getGitHubAvatarUrl = (username) => {
   // Using githubusercontent directly to avoid CORS issues
@@ -8,6 +11,8 @@ const getGitHubAvatarUrl = (username) => {
 };
 
 const GitHubCard = ({ username, prStats, commitStats, orgStats, topRepos }) => {
+  const [shareUrl, setShareUrl] = useState('');
+  const [showShareLink, setShowShareLink] = useState(false);
   const cardRef = useRef(null);
 
   const downloadCard = async () => {
@@ -33,6 +38,39 @@ const GitHubCard = ({ username, prStats, commitStats, orgStats, topRepos }) => {
     }
   };
 
+  const handleShare = async () => {
+    try {
+      // Prepare data to save
+      const statsData = {
+        username,
+        prStats,
+        commitStats,
+        orgStats,
+        topRepos,
+        generatedAt: new Date().toISOString()
+      };
+
+      // Save to Firestore
+      const docRef = await addDoc(collection(db, "stats"), statsData);
+      const generatedUrl = `${window.location.origin}/share/${docRef.id}`;
+      
+      setShareUrl(generatedUrl);
+      setShowShareLink(true);
+    } catch (error) {
+      console.error("Error sharing stats:", error);
+      alert("Error generating share link");
+    }
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      alert("Link copied to clipboard!");
+    } catch (error) {
+      console.error("Copy failed:", error);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center gap-4 w-full px-4 sm:px-0">
       {/* Download button above the card */}
@@ -44,6 +82,42 @@ const GitHubCard = ({ username, prStats, commitStats, orgStats, topRepos }) => {
         <Download size={20} />
         <span className="whitespace-nowrap">Download Stats Card</span>
       </button>
+      <button
+          onClick={handleShare}
+          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 flex-1 justify-center"
+        >
+          <Share2 size={20} /> {/* Import Share2 from lucide-react */}
+          <span>Share</span>
+        </button>
+        {showShareLink && (
+        <div className="w-full max-w-2xl bg-gray-800 p-4 rounded-lg mt-4 animate-fade-in">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={shareUrl}
+              readOnly
+              className="flex-1 bg-gray-700 text-white p-2 rounded-l-md text-sm truncate"
+              onClick={(e) => e.target.select()}
+            />
+            <button
+              onClick={handleCopy}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-r-md flex items-center gap-2 transition-colors"
+              title="Copy link"
+            >
+              <Copy size={16} />
+            </button>
+          </div>
+          <p className="text-gray-400 text-sm mt-2">
+            Link generated! Share this URL with anyone
+          </p>
+          <button
+            onClick={() => setShowShareLink(false)}
+            className="text-red-400 hover:text-red-300 text-sm mt-2"
+          >
+            Close
+          </button>
+        </div>
+      )}
 
       {/* Card Container with padding for shadow */}
       <div 

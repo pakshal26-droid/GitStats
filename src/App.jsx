@@ -1,11 +1,17 @@
 import React from 'react'
 import GitHub from './GitHub'
+import SharedStatCard from './components/SharedStatCard'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
 
 function App() {
   return (
-    <div>
-      <GitHub/>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<GitHub />} />
+        <Route path="/share/:statId" element={<SharedStatCard />} />
+      </Routes>
+    </Router>
   )
 }
 
