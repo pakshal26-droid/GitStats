@@ -531,11 +531,11 @@ const GitHub = () => {
 
       {/* Card Modal */}
       {showCard && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="relative max-w-4xl w-full">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="relative max-w-4xl w-full my-8">
             <button
               onClick={() => setShowCard(false)}
-              className="absolute -top-2 -right-2 bg-gray-800 text-white p-2 rounded-full hover:bg-gray-700"
+              className="absolute -top-2 -right-2 bg-gray-800 text-white p-2 rounded-full hover:bg-gray-700 z-20"
             >
               <X size={20} />
             </button>
