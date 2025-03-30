@@ -171,7 +171,7 @@ const GitHub = () => {
 
   const getTopRepos = () => {
     return reposData
-      .slice(0, 5)
+      .slice(0, 3)
       .map(repo => ({
         name: repo.full_name,
         stars: repo.stargazers_count,
