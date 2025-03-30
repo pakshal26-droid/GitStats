@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { GitPullRequest, GitCommit, User, BarChart, Search, Loader, Code, Star, GitFork, Building2, ArrowBigDown, ArrowDown } from 'lucide-react';
+import { GitPullRequest, GitCommit, User, BarChart, Search, Loader, Code, Star, GitFork, Building2, ArrowBigDown, ArrowDown, X } from 'lucide-react';
+import GitHubCard from './components/GitHubCard';
 
 const GitHub = () => {
   const [username, setUsername] = useState('');
@@ -13,6 +14,9 @@ const GitHub = () => {
   const [inputOrgName, setInputOrgName] = useState('');
   const [orgPRData, setOrgPRData] = useState(null);
   const [matchingPRs, setMatchingPRs] = useState([]);
+  const [organizations, setOrganizations] = useState([]);
+  const [orgPRsMap, setOrgPRsMap] = useState({});
+  const [showCard, setShowCard] = useState(false);
 
   const fetchUserData = async () => {
     if (!inputUsername.trim()) return;
@@ -103,11 +107,20 @@ const GitHub = () => {
       }
       
       const data = await response.json();
-      setOrgPRData(data);
       
       // Filter PRs matching the current username
       const matching = data.items.filter(pr => pr.user.login === username);
-      setMatchingPRs(matching);
+      
+      // Update organizations and their PR data
+      if (!organizations.includes(inputOrgName)) {
+        setOrganizations([...organizations, inputOrgName]);
+        setOrgPRsMap({
+          ...orgPRsMap,
+          [inputOrgName]: matching
+        });
+      }
+      
+      setInputOrgName(''); // Clear input after successful fetch
       
     } catch (err) {
       setError(err.message);
@@ -176,6 +189,26 @@ const GitHub = () => {
         count: commits.length
       }))
       .sort((a, b) => b.count - a.count);
+  };
+
+  const prepareCardStats = () => {
+    const prStats = calculatePRStats();
+    const commitStats = {
+      total: totalCommits,
+      byRepo: getCommitStats()
+    };
+    const orgStats = {
+      totalPRs: Object.values(orgPRsMap).reduce((sum, prs) => sum + prs.length, 0),
+      count: organizations.length
+    };
+    const topRepos = getTopRepos();
+
+    return {
+      prStats,
+      commitStats,
+      orgStats,
+      topRepos
+    };
   };
 
   const prStats = calculatePRStats();
@@ -263,12 +296,42 @@ const GitHub = () => {
                       : 'bg-indigo-600 hover:bg-indigo-700'
                   }`}
                 >
-                    {loading ? <Loader className="animate-spin mr-2" size={16} /> : <Search size={16} />}
-
+                  {loading ? <Loader className="animate-spin" size={16} /> : <Search size={16} />}
                 </button>
-                
               </div>
-                {loading? null : <p className="text-sm text-gray-500 mt-10 flex items-center gap-x-1 ">Check Bottom <ArrowDown className='size-4'/></p> }
+
+              {/* Added Organizations */}
+              {organizations.length > 0 && (
+                <div className="mt-4">
+                  <div className="bg-indigo-50 p-4 rounded-md mb-4">
+                    <div className="text-indigo-600 font-medium">Total Organization PRs</div>
+                    <div className="text-2xl font-bold">
+                      {Object.values(orgPRsMap).reduce((sum, prs) => sum + prs.length, 0)}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      Across {organizations.length} organization{organizations.length !== 1 ? 's' : ''}
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-sm font-medium text-gray-600 mb-2">Added Organizations:</h3>
+                  <ul className="space-y-2">
+                    {organizations.map(org => (
+                      <li key={org} className="flex justify-between items-center text-sm bg-gray-50 p-2 rounded">
+                        <span>{org}</span>
+                        <span className="text-indigo-600 font-medium">
+                          {orgPRsMap[org]?.length || 0} PRs
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              
+              {loading ? null : (
+                <p className="text-sm text-gray-500 mt-4 flex items-center gap-x-1">
+                  Check Bottom <ArrowDown className='size-4'/>
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -411,7 +474,7 @@ const GitHub = () => {
       )}
 
       {/* Organization PR Results */}
-      {matchingPRs.length > 0 && (
+      {Object.keys(orgPRsMap).length > 0 && (
         <div className="md:col-span-3 h-full">
           <div className="bg-white rounded-xl shadow-lg border border-gray-200 h-full">
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
@@ -420,31 +483,66 @@ const GitHub = () => {
                 Organization PR Results
               </div>
               <div className="text-sm font-normal text-gray-500">
-                {matchingPRs.length} matching PRs in {inputOrgName}
+                {Object.values(orgPRsMap).reduce((sum, prs) => sum + prs.length, 0)} PRs across {organizations.length} organization{organizations.length !== 1 ? 's' : ''}
               </div>
             </div>
             <div className="p-6">
-              <ul className="space-y-2">
-                {matchingPRs.map(pr => (
-                  <li key={pr.id} className="bg-gray-50 p-3 rounded-md">
-                    <a 
-                      href={pr.html_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-blue-600 hover:underline font-medium"
-                    >
-                      {pr.title}
-                    </a>
-                    <div className="text-sm text-gray-500 mt-1">
-                      {pr.repository_url.split('/repos/')[1]} • PR #{pr.number}
-                    </div>
-                    <div className="text-xs text-gray-400 mt-1">
-                      {new Date(pr.created_at).toLocaleDateString()}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              {organizations.map(org => (
+                <div key={org} className="mb-6">
+                  <h3 className="text-md font-medium text-gray-700 mb-3">{org}</h3>
+                  <ul className="space-y-2">
+                    {orgPRsMap[org].map(pr => (
+                      <li key={pr.id} className="bg-gray-50 p-3 rounded-md">
+                        <a 
+                          href={pr.html_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-blue-600 hover:underline font-medium"
+                        >
+                          {pr.title}
+                        </a>
+                        <div className="text-sm text-gray-500 mt-1">
+                          {pr.repository_url.split('/repos/')[1]} • PR #{pr.number}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {new Date(pr.created_at).toLocaleDateString()}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Generate Card Button */}
+      {username && (
+        <div className="md:col-span-3 flex justify-center mt-6">
+          <button
+            onClick={() => setShowCard(true)}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-all flex items-center gap-2"
+          >
+            Generate Summary Card
+          </button>
+        </div>
+      )}
+
+      {/* Card Modal */}
+      {showCard && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="relative max-w-4xl w-full">
+            <button
+              onClick={() => setShowCard(false)}
+              className="absolute -top-2 -right-2 bg-gray-800 text-white p-2 rounded-full hover:bg-gray-700"
+            >
+              <X size={20} />
+            </button>
+            <GitHubCard
+              username={username}
+              {...prepareCardStats()}
+            />
           </div>
         </div>
       )}
