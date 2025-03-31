@@ -66,7 +66,8 @@ import React from 'react'
 import bg from '../assets/bg.avif'
 import statcard from "../assets/statcard.png"
 import { Link } from 'react-router-dom'
-import { ArrowBigRight, CircleArrowOutUpRight, ArrowRight } from 'lucide-react'
+import { ArrowBigRight, CircleArrowOutUpRight, ArrowRight, ArrowDown } from 'lucide-react'
+import CardDisplay from '../components/CardDisplay'
 
 function Home() {
   const features = [
@@ -124,7 +125,15 @@ function Home() {
             )
           })}
         </ul>
+        <div className='absolute flex flex-col h-[60vh] justify-end items-center mt-10 md:mt-16'>
+          <p className='text-gray-500 text-lg font-semibold'>Scroll Down</p>
+          <ArrowDown size={30} className="w-5 h-5 text-gray-500 mt-5 animate-bounce" />
+        </div>
       </div>
+      
+    </div>
+    <div>
+      <CardDisplay/>
     </div>
   </>)
 }
